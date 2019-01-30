@@ -1,0 +1,7 @@
+node_modules
+.cache
+.DS_STORE
+/.bundle/
+/vendor/bundle
+
+/app.js
