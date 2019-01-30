@@ -8,6 +8,29 @@ class MyApp < Ovto::App
       [nil, nil, nil],
     ]
     item :player, default: 0
+
+    def game_over?
+      return true if winner
+      return true if board.all?{|row| row.all?{|cell| cell } }
+      return false
+    end
+
+    def winner
+      board.each do |row|
+        winner = check_winner(*row)
+        return winner if winner
+      end
+      board[0].size.times do |x|
+        winner = check_winner(board[0][x], board[1][x], board[2][x])
+        return winner if winner
+      end
+      check_winner(board[0][0], board[1][1], board[2][2]) or
+        check_winner(board[0][2], board[1][1], board[2][0])
+    end
+
+    def check_winner(a, b, c)
+      (a == b and b == c) ? a : nil
+    end
   end
 
   class Actions < Ovto::Actions
@@ -18,6 +41,16 @@ class MyApp < Ovto::App
       new_player = 1 - state.player
       return {board: new_board, player: new_player}
     end
+
+    def reset_game(state:)
+      new_board = [
+        [nil, nil, nil],
+        [nil, nil, nil],
+        [nil, nil, nil],
+      ]
+      new_player = state.player and 1 - state.player
+      { board: new_board, player: new_player }
+    end
   end
 
   class MainComponent < Ovto::Component
@@ -25,14 +58,25 @@ class MyApp < Ovto::App
 
     def render(state:)
       o 'div' do
-        o "div#player" do
-          "PLAYER: #{PLAYER_MARK[state.player]}"
+        unless state.game_over?
+          o "div#player" do
+            "PLAYER: #{PLAYER_MARK[state.player]}"
+          end
+        end
+
+        if state.game_over?
+          o "div#winner" do
+            "WINNER: #{PLAYER_MARK[state.winner]}"
+          end
+          o "a", href: "#", onclick: ->(e){ actions.reset_game } do
+            "RESET"
+          end
         end
         o "table#board" do
           state.board.each_with_index do |row, y|
             o "tr" do
               row.each_with_index do |cell, x|
-                o "td", onclick: ->(e){ actions.update_board(x: x, y: y) } do
+                o "td", onclick: ->(e){ actions.update_board(x: x, y: y) unless state.game_over? } do
                   PLAYER_MARK[cell]
                 end
               end
