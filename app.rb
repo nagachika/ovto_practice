@@ -12,6 +12,7 @@ class MyApp < Ovto::App
 
   class Actions < Ovto::Actions
     def update_board(state:, x:, y:)
+      return if state.board[y][x]
       new_board = state.board.map(&:dup)
       new_board[y][x] = state.player
       new_player = 1 - state.player
